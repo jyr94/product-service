@@ -39,6 +39,7 @@ Unit Test di jalakan waktu docker build
 ### Example API
 
 - Add Product
+```bash
 curl -u admin:admin123 \
   -X POST http://localhost:8181/products \
   -H "Content-Type: application/json" \
@@ -47,17 +48,24 @@ curl -u admin:admin123 \
     "price": 2000,
     "description": "desc product 1",
     "quantity": 10
-  }'
+  }' 
+  ```
 
 - default product list
+```bash
 curl -u admin:admin123 http://localhost:8181/products
+```
 
 - short price products
+``` bash
 curl -u admin:admin123 "http://localhost:8181/products?sort=price_asc"
+```
 
-- sort Name A-Z 
+- sort Name A-Z
+```bash
 curl -u admin:admin123 \
   "http://localhost:8181/products?sort=name_asc"
+```
 
 
 
