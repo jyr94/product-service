@@ -1,0 +1,76 @@
+version: "3.9"
+name: product_service_infra
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: product_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: productdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7
+    container_name: product_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  migrate:
+    image: migrate/migrate:v4.17.1
+    container_name: product_migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ../migrations:/migrations:ro
+    command:
+      [
+        "-verbose",
+        "-path", "/migrations",
+        "-database",
+        "postgres://postgres:postgres@postgres:5432/productdb?sslmode=disable",
+        "up"
+      ]
+    restart: "no"
+
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: product_service
+    ports:
+      - "8181:8181"
+    environment:
+      APP_ENV: production
+      HTTP_PORT: 8181
+      BASIC_AUTH_USER: admin
+      BASIC_AUTH_PASS: admin123
+
+      DB_DSN: postgres://postgres:postgres@postgres:5432/productdb?sslmode=disable
+
+      REDIS_ENABLED: "true"
+      REDIS_ADDR: redis:6379
+      REDIS_DB: 0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
